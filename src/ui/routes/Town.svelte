@@ -14,36 +14,87 @@
     return null;
   }
 
-  function goDungeon() {
-    try {
-      // Read the location store VALUE, not the store object
-      const loc = get(location);
-      const seed = `${loc.zoneId}-floor1`;
-      const map = generateDungeon(seed, 1);
-      dungeonMap.set(map);
-      const es = spawnEnemies(map, 1, seed);
-      enemies.set(es);
+  // Expose a step counter to the UI for diagnostic purposes
+  let debugStatus = "Idle";
+  let debugError: string | null = null;
 
+  function setStatus(msg: string) {
+    debugStatus = msg;
+    console.log("[goDungeon]", msg);
+  }
+
+  function goDungeon() {
+    debugError = null;
+    setStatus("Click 1: handler entered");
+
+    try {
+      // 1. Read location store
+      setStatus("Step 1: reading location store");
+      const loc = get(location);
+      console.log("[goDungeon] location =", loc);
+      const seed = `${loc.zoneId}-floor1`;
+      setStatus(`Step 2: seed = ${seed}`);
+
+      // 2. Generate dungeon
+      setStatus("Step 3: generating dungeon");
+      const map = generateDungeon(seed, 1);
+      console.log("[goDungeon] map generated, dims:", map.width, "x", map.height);
+      setStatus(`Step 4: map generated (${map.width}x${map.height})`);
+
+      // 3. Set dungeon map store
+      setStatus("Step 5: setting dungeonMap store");
+      dungeonMap.set(map);
+      setStatus("Step 6: dungeonMap set");
+
+      // 4. Spawn enemies
+      setStatus("Step 7: spawning enemies");
+      const es = spawnEnemies(map, 1, seed);
+      console.log("[goDungeon] enemies spawned:", es.length);
+      setStatus(`Step 8: ${es.length} enemies spawned`);
+
+      // 5. Set enemies store
+      setStatus("Step 9: setting enemies store");
+      enemies.set(es);
+      setStatus("Step 10: enemies set");
+
+      // 6. Find stairs
+      setStatus("Step 11: finding start position");
       const start = findStairs(map) ?? { x: 1, y: 1 };
+      console.log("[goDungeon] start position:", start);
+      setStatus(`Step 12: start at (${start.x},${start.y})`);
+
+      // 7. Update player
+      setStatus("Step 13: updating player");
       player.update((p) => {
         p.position = start;
         return p;
       });
+      setStatus("Step 14: player updated");
 
+      // 8. Update location
+      setStatus("Step 15: updating location");
       location.update((l) => ({ ...l, isTown: false }));
-      // Combat is started by Dungeon.svelte onMount — not here.
+      setStatus("Step 16: location updated");
+
+      // 9. Navigate
+      setStatus("Step 17: navigating to /dungeon");
       navigate("/dungeon");
-    } catch (e) {
-      console.error("goDungeon failed", e);
-      throw e;
+      setStatus("Step 18: navigate() returned");
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      console.error("[goDungeon] FAILED:", e);
+      debugError = msg;
+      setStatus(`ERROR: ${msg}`);
     }
   }
 
   function openInventory() {
+    setStatus("Inventory: navigating");
     navigate("/inventory");
   }
 
   function toSettings() {
+    setStatus("Settings: navigating");
     navigate("/settings");
   }
 </script>
@@ -96,6 +147,12 @@
       </div>
     </div>
   </div>
+
+  <!-- Diagnostic panel: shows what happened on last Enter Dungeon click -->
+  <div class="debug-panel" class:err={!!debugError}>
+    <span class="debug-label">DEBUG</span>
+    <span class="debug-msg">{debugError ? `❌ ${debugError}` : debugStatus}</span>
+  </div>
 </div>
 
 <style>
@@ -105,6 +162,7 @@
     display: flex;
     flex-direction: column;
     padding: 24px 40px;
+    padding-bottom: 56px;  /* leave room for debug panel */
     background: radial-gradient(ellipse at top, rgba(80, 60, 30, 0.15) 0%, transparent 60%);
   }
 
@@ -234,5 +292,39 @@
 
   .fill.xp {
     background: linear-gradient(90deg, #aa8800 0%, #ffd700 100%);
+  }
+
+  .debug-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.9);
+    border-top: 1px solid var(--bg-3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .debug-panel.err {
+    background: rgba(80, 0, 0, 0.9);
+    border-top-color: #ff3c3c;
+  }
+
+  .debug-label {
+    color: var(--accent);
+    font-weight: bold;
+    letter-spacing: 0.15em;
+  }
+
+  .debug-msg {
+    color: var(--fg-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

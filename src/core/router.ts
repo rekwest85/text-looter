@@ -11,31 +11,49 @@ import { writable, get, type Writable } from "svelte/store";
 const routeComponents: Record<string, any> = {};
 let history: string[] = [];
 
+// Expose a last-action string for debugging (read by DebugOverlay + Town panel)
+let _lastNavInfo = "router ready";
+export const lastNavInfo: Writable<string> = writable(_lastNavInfo);
+function setNavInfo(msg: string) {
+  _lastNavInfo = msg;
+  lastNavInfo.set(msg);
+  console.log("[router]", msg);
+}
+
 export const route: Writable<string> = writable(getInitial());
 
 function getInitial(): string {
   if (typeof window === "undefined") return "/";
   const hash = (window.location.hash || "#/").slice(1);
-  // Normalize: "/", "/town", etc.
   return hash.startsWith("/") ? hash : `/${hash}`;
 }
 
 export function registerRoute(path: string, component: any) {
   routeComponents[path] = component;
+  setNavInfo(`registered ${path}`);
 }
 
 export function getComponent(path: string): any {
-  return routeComponents[path] ?? routeComponents["/"] ?? null;
+  const c = routeComponents[path] ?? routeComponents["/"] ?? null;
+  setNavInfo(`getComponent(${path}) -> ${c ? "FOUND" : "NULL"}`);
+  return c;
 }
 
 export function navigate(path: string) {
   const current = get(route);
-  if (current === path) return;
+  setNavInfo(`navigate(${path}) from ${current}`);
+  if (current === path) {
+    setNavInfo(`navigate(${path}) no-op (same path)`);
+    return;
+  }
   if (typeof window !== "undefined") {
+    setNavInfo(`setting window.location.hash = ${path}`);
     window.location.hash = path;
+    setNavInfo(`hash set, current = ${window.location.hash}`);
   }
   history.push(current);
   route.set(path);
+  setNavInfo(`route store updated to ${path}`);
 }
 
 export function replace(path: string) {
@@ -60,6 +78,8 @@ export function back() {
 // Listen for back button / manual hash changes
 if (typeof window !== "undefined") {
   window.addEventListener("hashchange", () => {
-    route.set(getInitial());
+    const next = getInitial();
+    setNavInfo(`hashchange -> ${next}`);
+    route.set(next);
   });
 }

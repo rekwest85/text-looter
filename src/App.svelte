@@ -31,7 +31,11 @@
   let pixiHost: HTMLDivElement;
   let CurrentComponent: any = null;
 
-  $: CurrentComponent = getComponent($route);
+  $: {
+    console.log("[App.svelte] route changed ->", $route);
+    CurrentComponent = getComponent($route);
+    console.log("[App.svelte] CurrentComponent =", CurrentComponent?.name ?? CurrentComponent ?? "null");
+  }
 
   async function boot() {
     try { await initCapacitor(); } catch (e) { console.warn("capacitor init", e); }
