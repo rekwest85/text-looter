@@ -2,24 +2,29 @@
 
 Downloadable APKs for sideloading onto Android handhelds. No Play Store, no signing service.
 
-## v0.1.1 — Auto-update + native plugins
+## v0.1.2 — Freeze fixes + custom router
 
-[Download APK](v0.1.1/text-looter-v0.1.1.apk) (3.42 MB)
+[Download APK](v0.1.2/text-looter-v0.1.2.apk) (3.42 MB)
 
-**New:**
-- **Auto-updater** — on launch, the app calls the GitHub Releases API. If a newer version exists, you get a modal with the release notes and a one-tap "Update Now" button. It downloads the APK in the background with a progress bar, then opens the Android system installer. The app restarts into the new version.
-- "Later" and "Skip This Version" buttons. Skipped versions are remembered per-device.
-- Throttled to one check every 4 hours (no API spam).
-- New Capacitor plugins bundled: filesystem, file-opener, browser (used by the updater).
+**What's fixed (the freeze on Enter Dungeon / Inventory):**
+- **Replaced svelte-spa-router with a tiny custom hash router** — the external router was the prime suspect for the "nothing happens" symptom. Our router is ~60 lines, fully owned, and has no async surprise.
+- **Combat tick is now started in `Dungeon.svelte` `onMount`** — previously it was started in `Town.svelte` *before* navigation. The tick fired on a route that was about to unmount, so by the time the user got to the dungeon, combat was already stopped and the render loop was spinning on stale enemies. Moving it to the dungeon mount makes the lifecycle correct.
+- **Fixed `location.zoneId` access bug** — in `Town.svelte` we were reading `.zoneId` off the Svelte store *object* instead of the value. The seed silently became `"undefined-floor1"`. Now using `get(location)` to read the value.
+- **Added an ErrorBoundary** — any uncaught error (window.error + unhandledrejection) now pops a red modal with the stack trace and a Restart button, instead of silently freezing.
+- **Added a DebugOverlay** — press <code>Ctrl+Shift+D</code> (or <code>\`</code>) in-game to see current route, native status, gamepad status, version, and updater state. Use this to triage any future freeze.
+- **Wrapped the combat tick + render tick in try/catch** so a transient error in one frame doesn't kill the loop forever.
+- **Made Pixi initialization non-blocking** with a 3s timeout, so if WebGL init hangs on a particular device, the game still plays.
+- **Made boot() defensive** — every init step is wrapped in try/catch, so one failure can't take the whole app down.
 
-**Bugs fixed (from v0.1.0):**
-- Combat loop was never running (running flag was false on init) — fixed
-- Town.svelte had a broken player-position lookup — fixed
-- Layout was hardcoded 4:3 — now responsive, fills viewport at 16:9 and 4:3
-- Dungeon canvas now auto-resizes to the screen
+**Auto-update test path:**
+1. You should already have v0.1.1 installed (or v0.1.0 — both will see v0.1.2 as newer)
+2. Launch the app
+3. After ~1s the update prompt should appear with **v0.1.2 available**
+4. Tap **Update Now** → APK downloads with progress bar → system installer opens → tap Install
+5. Launch the new app — the prompt is gone (you're on latest)
 
-**What's in the build (same as v0.1.0 plus the above):**
-- Main menu, character creation, town, procedural dungeons, combat tick, 20-tier loot, inventory (20 slots), gamepad/keyboard/touch input, particle VFX, save system
+**What's in the build (same as v0.1.1, plus the fixes above):**
+- Main menu, character creation, town, procedural dungeons, combat tick, 20-tier loot, inventory (20 slots), gamepad/keyboard/touch input, particle VFX, save system, auto-updater
 
 **Install:**
 1. On your Android device, enable "Install from unknown sources" for your file manager
@@ -28,10 +33,14 @@ Downloadable APKs for sideloading onto Android handhelds. No Play Store, no sign
 
 Or via ADB:
 ```bash
-adb install -r text-looter-v0.1.1.apk
+adb install -r text-looter-v0.1.2.apk
 ```
 
 **Tested on:** AYN Thor (16:9), RG 477V (4:3)
+
+## v0.1.1 — Auto-updater
+
+[Download APK](v0.1.1/text-looter-v0.1.1.apk) (3.42 MB)
 
 ## v0.1.0 — Phase 0 skeleton
 

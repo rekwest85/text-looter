@@ -35,7 +35,11 @@ export function stopCombat() {
 function loop() {
   if (!running) return;
   setTimeout(() => {
-    tick();
+    try {
+      tick();
+    } catch (e) {
+      console.error("combat tick error", e);
+    }
     loop();
   }, 1000 / TICK_RATE);
 }

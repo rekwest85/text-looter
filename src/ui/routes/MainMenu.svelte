@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { route, saveSlots, gamepadConnected, isNative } from "../../core/state";
   import { db, listSaveSlots, newCharacter, deleteCharacter } from "../../core/save";
-  import { push } from "svelte-spa-router";
+  import { navigate } from "../../core/router";
 
   let slots: any[] = [];
 
@@ -13,21 +13,15 @@
   onMount(refresh);
 
   async function createNew() {
-    push("/create");
+    navigate("/create");
   }
 
   async function continueSlot(slot: any) {
-    push("/town");
-  }
-
-  async function overWriteOrCreate(classId: string) {
-    await newCharacter("Wanderer", classId);
-    await refresh();
-    push("/town");
+    navigate("/town");
   }
 
   function settings() {
-    push("/settings");
+    navigate("/settings");
   }
 
   $: gamepadConnectedVal = $gamepadConnected;

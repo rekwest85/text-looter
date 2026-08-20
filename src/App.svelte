@@ -1,16 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Router from "svelte-spa-router";
-  import { route, saveSlots, settings } from "./core/state";
+  import { saveSlots, settings } from "./core/state";
   import { initGamepad } from "./platform/gamepad";
   import { initKeyboard } from "./platform/keyboard";
   import { initTouch } from "./platform/touch";
   import { initFocus } from "./platform/focus";
   import { initCapacitor } from "./platform/capacitor";
   import { checkForUpdate } from "./platform/updater";
-  import { db, loadSettings, listSaveSlots } from "./core/save";
+  import { loadSettings, listSaveSlots } from "./core/save";
   import { initPixi } from "./vfx/PixiApp";
+  import { route, registerRoute, getComponent } from "./core/router";
+  import ErrorBoundary from "./ui/components/ErrorBoundary.svelte";
   import UpdatePrompt from "./ui/components/UpdatePrompt.svelte";
+  import DebugOverlay from "./ui/components/DebugOverlay.svelte";
 
   import MainMenu from "./ui/routes/MainMenu.svelte";
   import Town from "./ui/routes/Town.svelte";
@@ -19,21 +21,21 @@
   import SettingsRoute from "./ui/routes/Settings.svelte";
   import Inventory from "./ui/routes/Inventory.svelte";
 
-  const routes = {
-    "/": MainMenu,
-    "/create": CreateChar,
-    "/town": Town,
-    "/dungeon": Dungeon,
-    "/inventory": Inventory,
-    "/settings": SettingsRoute,
-  };
+  registerRoute("/", MainMenu);
+  registerRoute("/create", CreateChar);
+  registerRoute("/town", Town);
+  registerRoute("/dungeon", Dungeon);
+  registerRoute("/inventory", Inventory);
+  registerRoute("/settings", SettingsRoute);
 
   let pixiHost: HTMLDivElement;
+  let CurrentComponent: any = null;
+
+  $: CurrentComponent = getComponent($route);
 
   async function boot() {
-    await initCapacitor();
+    try { await initCapacitor(); } catch (e) { console.warn("capacitor init", e); }
 
-    // Load saved settings + slots
     try {
       const saved = await loadSettings();
       if (saved) {
@@ -56,22 +58,19 @@
       console.warn("DB load failed", e);
     }
 
-    // Init input layer
-    initGamepad();
-    initKeyboard();
-    initTouch();
-    initFocus();
+    try { initGamepad(); } catch (e) { console.warn("gamepad init", e); }
+    try { initKeyboard(); } catch (e) { console.warn("keyboard init", e); }
+    try { initTouch(); } catch (e) { console.warn("touch init", e); }
+    try { initFocus(); } catch (e) { console.warn("focus init", e); }
 
-    // Init Pixi for VFX
-    try {
-      await initPixi(pixiHost);
-    } catch (e) {
-      console.warn("Pixi init failed", e);
-    }
+    // Non-blocking Pixi init (with timeout safety)
+    Promise.race([
+      initPixi(pixiHost).catch((e) => console.warn("pixi init", e)),
+      new Promise((res) => setTimeout(res, 3000)),
+    ]);
 
-    // Check for updates (non-blocking — runs in the background, throttled to
-    // 4 hours between calls; the modal will appear if a newer version is found)
-    checkForUpdate().catch((e) => console.warn("update check failed", e));
+    // Non-blocking update check
+    checkForUpdate().catch((e) => console.warn("update check", e));
   }
 
   onMount(() => {
@@ -84,13 +83,45 @@
 </svelte:head>
 
 <div class="game-frame">
-  <Router {routes} />
+  <ErrorBoundary>
+    {#if CurrentComponent}
+      <svelte:component this={CurrentComponent} />
+    {:else}
+      <div class="error-fallback">
+        <h2>Route not found: {$route}</h2>
+        <button on:click={() => (window.location.hash = "/")}>Return Home</button>
+      </div>
+    {/if}
+  </ErrorBoundary>
   <div bind:this={pixiHost} class="pixi-host"></div>
   <UpdatePrompt />
+  <DebugOverlay />
 </div>
 
 <style>
   :global(body) {
     background: #000;
+  }
+
+  .error-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #fff;
+    background: #050507;
+  }
+
+  .error-fallback button {
+    background: #ffd700;
+    color: #050507;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
   }
 </style>

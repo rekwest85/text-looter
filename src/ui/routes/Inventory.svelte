@@ -2,7 +2,7 @@
   import { player, pendingLoot } from "../../core/state";
   import { EQUIP_SLOTS, BASE_BY_ID } from "../../data/items";
   import { RARITY_BY_ID } from "../../data/rarities";
-  import { push } from "svelte-spa-router";
+  import { navigate } from "../../core/router";
 
   function focusSlot(slotId: string, e: MouseEvent | FocusEvent) {
     const el = e.target as HTMLElement;
@@ -27,7 +27,7 @@
 
 <div class="inventory">
   <div class="header">
-    <button class="back focusable" on:click={() => push("/town")} data-id="back">◀ Back</button>
+    <button class="back focusable" on:click={() => navigate("/town")} data-id="back">◀ Back</button>
     <h1 class="title">Inventory</h1>
     <div class="gold">⛁ {$player.gold}</div>
   </div>

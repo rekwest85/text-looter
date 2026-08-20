@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { push } from "svelte-spa-router";
-  import { player, location } from "../../core/state";
+  import { navigate } from "../../core/router";
+  import { player, location, dungeonMap, enemies } from "../../core/state";
   import { generateDungeon } from "../../systems/procgen";
   import { spawnEnemies } from "../../systems/spawns";
-  import { setRunning } from "../../systems/combat";
-  import { dungeonMap, enemies } from "../../core/state";
+  import { get } from "svelte/store";
 
   function findStairs(map: any): { x: number; y: number } | null {
     for (let y = 0; y < map.cells.length; y++) {
@@ -16,29 +15,36 @@
   }
 
   function goDungeon() {
-    const seed = `${location.zoneId}-floor1`;
-    const map = generateDungeon(seed, 1);
-    dungeonMap.set(map);
-    const es = spawnEnemies(map, 1, seed);
-    enemies.set(es);
+    try {
+      // Read the location store VALUE, not the store object
+      const loc = get(location);
+      const seed = `${loc.zoneId}-floor1`;
+      const map = generateDungeon(seed, 1);
+      dungeonMap.set(map);
+      const es = spawnEnemies(map, 1, seed);
+      enemies.set(es);
 
-    const start = findStairs(map) ?? { x: 1, y: 1 };
-    player.update((p) => {
-      p.position = start;
-      return p;
-    });
+      const start = findStairs(map) ?? { x: 1, y: 1 };
+      player.update((p) => {
+        p.position = start;
+        return p;
+      });
 
-    location.update((l) => ({ ...l, isTown: false }));
-    setRunning(true);
-    push("/dungeon");
+      location.update((l) => ({ ...l, isTown: false }));
+      // Combat is started by Dungeon.svelte onMount — not here.
+      navigate("/dungeon");
+    } catch (e) {
+      console.error("goDungeon failed", e);
+      throw e;
+    }
   }
 
   function openInventory() {
-    push("/inventory");
+    navigate("/inventory");
   }
 
   function toSettings() {
-    push("/settings");
+    navigate("/settings");
   }
 </script>
 

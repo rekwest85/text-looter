@@ -1,7 +1,7 @@
 {
   "name": "text-looter-rpg",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -24,7 +24,6 @@
     "@capacitor/status-bar": "^8.0.3",
     "dexie": "^4.4.5",
     "pixi.js": "^8.20.0",
-    "svelte-spa-router": "^5.1.1",
     "tone": "^15.1.22"
   },
   "devDependencies": {

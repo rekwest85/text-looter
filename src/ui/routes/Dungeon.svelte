@@ -5,7 +5,7 @@
   import { movePlayer, setRunning } from "../../systems/combat";
   import { computeFOV } from "../../systems/procgen";
   import { BTN } from "../../platform/gamepad";
-  import { push } from "svelte-spa-router";
+  import { navigate } from "../../core/router";
   import LootModal from "../components/LootModal.svelte";
   import CombatLog from "../components/CombatLog.svelte";
   import ActionBar from "../components/ActionBar.svelte";
@@ -156,7 +156,11 @@
   }
 
   function tick() {
-    renderOnce();
+    try {
+      renderOnce();
+    } catch (e) {
+      console.error("render error", e);
+    }
     renderHandle = requestAnimationFrame(tick);
   }
 
@@ -171,34 +175,51 @@
     if (e.detail.index === BTN.START) {
       setRunning(false);
       location.update((l) => ({ ...l, isTown: true }));
-      push("/town");
+      navigate("/town");
     }
   }
 
   onMount(() => {
-    canvasEl = document.createElement("canvas");
-    canvasEl.style.cssText = "display:block; image-rendering: pixelated; width: 100%; height: 100%;";
-    containerEl.appendChild(canvasEl);
-    ctx = canvasEl.getContext("2d")!;
+    try {
+      canvasEl = document.createElement("canvas");
+      canvasEl.style.cssText = "display:block; image-rendering: pixelated; width: 100%; height: 100%;";
+      containerEl.appendChild(canvasEl);
+      const got = canvasEl.getContext("2d");
+      if (!got) throw new Error("Failed to get 2D context");
+      ctx = got;
 
-    mapCanvas = document.createElement("canvas");
-    mapCtx = mapCanvas.getContext("2d")!;
+      mapCanvas = document.createElement("canvas");
+      const mctx = mapCanvas.getContext("2d");
+      if (!mctx) throw new Error("Failed to get 2D context for offscreen");
+      mapCtx = mctx;
 
-    recomputeViewport();
-    renderOnce();
-    renderHandle = requestAnimationFrame(tick);
-
-    // React to resizes (orientation change, window resize, etc.)
-    resizeObserver = new ResizeObserver(() => {
       recomputeViewport();
-      lastMapHash = ""; // force re-render
-    });
-    resizeObserver.observe(containerEl);
-    window.addEventListener("resize", recomputeViewport);
-    window.addEventListener("orientationchange", recomputeViewport);
+      renderOnce();
+      renderHandle = requestAnimationFrame(tick);
 
-    window.addEventListener("gamepad:dpad", onDpad);
-    window.addEventListener("gamepad:button", onButton);
+      // React to resizes (orientation change, window resize, etc.)
+      resizeObserver = new ResizeObserver(() => {
+        recomputeViewport();
+        lastMapHash = ""; // force re-render
+      });
+      resizeObserver.observe(containerEl);
+      window.addEventListener("resize", recomputeViewport);
+      window.addEventListener("orientationchange", recomputeViewport);
+
+      window.addEventListener("gamepad:dpad", onDpad);
+      window.addEventListener("gamepad:button", onButton);
+
+      // Start the combat tick loop ONLY after the dungeon view is mounted.
+      // (Previously started in Town.svelte before navigation completed — racy.)
+      try {
+        setRunning(true);
+      } catch (e) {
+        console.error("combat start failed", e);
+      }
+    } catch (e) {
+      console.error("Dungeon.svelte onMount failed", e);
+      throw e;
+    }
 
     return () => {
       window.removeEventListener("gamepad:dpad", onDpad);

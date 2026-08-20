@@ -1,7 +1,7 @@
 <script lang="ts">
   import { settings } from "../../core/state";
   import { saveSettings } from "../../core/save";
-  import { push } from "svelte-spa-router";
+  import { navigate } from "../../core/router";
 
   async function update() {
     const s = $settings;
@@ -23,7 +23,7 @@
 
   function back() {
     update();
-    push("/");
+    navigate("/");
   }
 </script>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { push } from "svelte-spa-router";
+  import { navigate } from "../../core/router";
   import { newCharacter } from "../../core/save";
 
   let selectedClass = "warrior";
@@ -16,7 +16,7 @@
 
   async function start() {
     await newCharacter(name, selectedClass);
-    push("/town");
+    navigate("/town");
   }
 </script>
 
@@ -47,7 +47,7 @@
       <input class="name-input focusable" type="text" bind:value={name} maxlength="20" data-id="name" />
     </label>
     <button class="btn primary focusable" on:click={start} data-id="start">▶ Begin</button>
-    <button class="btn focusable" on:click={() => push("/")} data-id="back">◀ Back</button>
+    <button class="btn focusable" on:click={() => navigate("/")} data-id="back">◀ Back</button>
   </div>
 </div>
 
