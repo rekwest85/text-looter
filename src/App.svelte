@@ -29,13 +29,16 @@
   registerRoute("/settings", SettingsRoute);
 
   let pixiHost: HTMLDivElement;
-  let CurrentComponent: any = null;
+  // Svelte 5 runes mode: $: reactive statements don't reliably trigger
+  // template re-renders. Use $derived so the template re-renders when
+  // the route store updates. This is what was preventing the screen from
+  // swapping to the Dungeon component even though the store updated.
+  const CurrentComponent: any = $derived(getComponent($route));
 
-  $: {
-    console.log("[App.svelte] route changed ->", $route);
-    CurrentComponent = getComponent($route);
-    console.log("[App.svelte] CurrentComponent =", CurrentComponent?.name ?? CurrentComponent ?? "null");
-  }
+  // Trace route changes for debugging.
+  $effect(() => {
+    console.log("[App.svelte] route ->", $route, "component ->", CurrentComponent?.name ?? "?");
+  });
 
   async function boot() {
     try { await initCapacitor(); } catch (e) { console.warn("capacitor init", e); }
@@ -89,7 +92,7 @@
 <div class="game-frame">
   <ErrorBoundary>
     {#if CurrentComponent}
-      <svelte:component this={CurrentComponent} />
+      <CurrentComponent />
     {:else}
       <div class="error-fallback">
         <h2>Route not found: {$route}</h2>
