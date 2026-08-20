@@ -5,6 +5,12 @@
   import { spawnEnemies } from "../../systems/spawns";
   import { get } from "svelte/store";
 
+  // In Svelte 5 runes mode (default), `let` is NOT reactive. Use $state for
+  // values that should re-render the template. This is why the v0.1.4 debug
+  // bar stayed at "Idle" — the assignment didn't trigger reactivity.
+  let debugStatus = $state("Idle");
+  let debugError: string | null = $state(null);
+
   function findStairs(map: any): { x: number; y: number } | null {
     for (let y = 0; y < map.cells.length; y++) {
       for (let x = 0; x < map.cells[0].length; x++) {
@@ -14,56 +20,53 @@
     return null;
   }
 
-  // Expose a step counter to the UI for diagnostic purposes
-  let debugStatus = "Idle";
-  let debugError: string | null = null;
-
   function setStatus(msg: string) {
     debugStatus = msg;
+    // Also expose to window for the DebugOverlay to read.
+    if (typeof window !== "undefined") {
+      (window as any).__lastClick = msg;
+    }
     console.log("[goDungeon]", msg);
   }
 
-  function goDungeon() {
+  function goDungeon(event?: Event) {
     debugError = null;
+    if (typeof window !== "undefined") {
+      (window as any).__lastClick = "Enter Dungeon clicked at " + new Date().toISOString();
+    }
+    console.log("[goDungeon] HANDLER FIRED", event?.type);
     setStatus("Click 1: handler entered");
 
     try {
-      // 1. Read location store
       setStatus("Step 1: reading location store");
       const loc = get(location);
       console.log("[goDungeon] location =", loc);
       const seed = `${loc.zoneId}-floor1`;
       setStatus(`Step 2: seed = ${seed}`);
 
-      // 2. Generate dungeon
       setStatus("Step 3: generating dungeon");
       const map = generateDungeon(seed, 1);
       console.log("[goDungeon] map generated, dims:", map.width, "x", map.height);
       setStatus(`Step 4: map generated (${map.width}x${map.height})`);
 
-      // 3. Set dungeon map store
       setStatus("Step 5: setting dungeonMap store");
       dungeonMap.set(map);
       setStatus("Step 6: dungeonMap set");
 
-      // 4. Spawn enemies
       setStatus("Step 7: spawning enemies");
       const es = spawnEnemies(map, 1, seed);
       console.log("[goDungeon] enemies spawned:", es.length);
       setStatus(`Step 8: ${es.length} enemies spawned`);
 
-      // 5. Set enemies store
       setStatus("Step 9: setting enemies store");
       enemies.set(es);
       setStatus("Step 10: enemies set");
 
-      // 6. Find stairs
       setStatus("Step 11: finding start position");
       const start = findStairs(map) ?? { x: 1, y: 1 };
       console.log("[goDungeon] start position:", start);
       setStatus(`Step 12: start at (${start.x},${start.y})`);
 
-      // 7. Update player
       setStatus("Step 13: updating player");
       player.update((p) => {
         p.position = start;
@@ -71,29 +74,33 @@
       });
       setStatus("Step 14: player updated");
 
-      // 8. Update location
       setStatus("Step 15: updating location");
       location.update((l) => ({ ...l, isTown: false }));
       setStatus("Step 16: location updated");
 
-      // 9. Navigate
       setStatus("Step 17: navigating to /dungeon");
       navigate("/dungeon");
       setStatus("Step 18: navigate() returned");
     } catch (e: any) {
       const msg = e?.message || String(e);
+      const stack = e?.stack || "";
       console.error("[goDungeon] FAILED:", e);
-      debugError = msg;
+      debugError = msg + (stack ? "\n" + stack.split("\n").slice(0, 4).join("\n") : "");
       setStatus(`ERROR: ${msg}`);
+      if (typeof window !== "undefined") {
+        (window as any).__lastError = { message: msg, stack };
+      }
     }
   }
 
-  function openInventory() {
+  function openInventory(event?: Event) {
+    console.log("[openInventory] HANDLER FIRED", event?.type);
     setStatus("Inventory: navigating");
     navigate("/inventory");
   }
 
-  function toSettings() {
+  function toSettings(event?: Event) {
+    console.log("[toSettings] HANDLER FIRED", event?.type);
     setStatus("Settings: navigating");
     navigate("/settings");
   }
@@ -148,7 +155,6 @@
     </div>
   </div>
 
-  <!-- Diagnostic panel: shows what happened on last Enter Dungeon click -->
   <div class="debug-panel" class:err={!!debugError}>
     <span class="debug-label">DEBUG</span>
     <span class="debug-msg">{debugError ? `❌ ${debugError}` : debugStatus}</span>
@@ -162,7 +168,7 @@
     display: flex;
     flex-direction: column;
     padding: 24px 40px;
-    padding-bottom: 56px;  /* leave room for debug panel */
+    padding-bottom: 56px;
     background: radial-gradient(ellipse at top, rgba(80, 60, 30, 0.15) 0%, transparent 60%);
   }
 
