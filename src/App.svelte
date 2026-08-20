@@ -7,8 +7,10 @@
   import { initTouch } from "./platform/touch";
   import { initFocus } from "./platform/focus";
   import { initCapacitor } from "./platform/capacitor";
+  import { checkForUpdate } from "./platform/updater";
   import { db, loadSettings, listSaveSlots } from "./core/save";
   import { initPixi } from "./vfx/PixiApp";
+  import UpdatePrompt from "./ui/components/UpdatePrompt.svelte";
 
   import MainMenu from "./ui/routes/MainMenu.svelte";
   import Town from "./ui/routes/Town.svelte";
@@ -66,6 +68,10 @@
     } catch (e) {
       console.warn("Pixi init failed", e);
     }
+
+    // Check for updates (non-blocking — runs in the background, throttled to
+    // 4 hours between calls; the modal will appear if a newer version is found)
+    checkForUpdate().catch((e) => console.warn("update check failed", e));
   }
 
   onMount(() => {
@@ -80,6 +86,7 @@
 <div class="game-frame">
   <Router {routes} />
   <div bind:this={pixiHost} class="pixi-host"></div>
+  <UpdatePrompt />
 </div>
 
 <style>
