@@ -52,7 +52,8 @@ if (-not $Token) {
 }
 
 $tag = if ($Version.StartsWith("v")) { $Version } else { "v$Version" }
-$apkSrc = "releases/$Version/text-looter-$Version.apk"
+$pathVer = if ($Version.StartsWith("v")) { $Version } else { "v$Version" }
+$apkSrc = "releases/$pathVer/text-looter-$pathVer.apk"
 if (-not (Test-Path $apkSrc)) {
     Write-Host "ERROR: APK not found at $apkSrc" -ForegroundColor Red
     Write-Host "Build it first:  npm run android:apk" -ForegroundColor Yellow
