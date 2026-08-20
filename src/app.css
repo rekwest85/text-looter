@@ -1,0 +1,281 @@
+/* ==========================================================================
+   Text Looter RPG — Global Styles
+   ==========================================================================
+   Theme: pure black canvas, monospace headings, semantic colors.
+   Layout: 4:3 ratio prioritized, responsive to 16:9.
+   ========================================================================== */
+
+:root {
+  /* Background tones */
+  --bg-0: #050507;
+  --bg-1: #0c0c12;
+  --bg-2: #14141c;
+  --bg-3: #1f1f2a;
+  --bg-4: #2a2a38;
+
+  /* Text tones */
+  --fg-0: #f0f0f0;
+  --fg-1: #c8c8d0;
+  --fg-2: #8a8a96;
+  --fg-3: #5a5a66;
+
+  /* Semantic */
+  --accent: #ffd700;
+  --accent-soft: #b8960f;
+  --danger: #ff3c3c;
+  --success: #3cff95;
+  --info: #3cb0ff;
+
+  /* Damage type colors */
+  --phys: #c8a878;
+  --fire: #ff5a1f;
+  --frost: #7ce8ff;
+  --lightning: #fff066;
+  --poison: #66ff5a;
+  --holy: #ffffff;
+  --dark: #bb88ff;
+  --void: #ff44ff;
+
+  /* Focus ring */
+  --focus-ring: #ffd700;
+  --focus-ring-glow: rgba(255, 215, 0, 0.6);
+
+  /* Fonts */
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Cinzel", "Trajan Pro", Georgia, serif;
+
+  /* Layout */
+  --scale: 1;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #0a0a14 0%, #04040a 70%);
+}
+
+/* The game frame fills the viewport. Internal UI uses flex/grid to adapt. */
+.game-frame {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-0);
+  overflow: hidden;
+  --scale: min(100vw / 1280, 100vh / 960);
+}
+
+@media (max-aspect-ratio: 4/3) {
+  .game-frame {
+    /* On taller-than-4:3, lock to 4:3 letterboxed top/bottom */
+    width: 100vw;
+    height: calc(100vw * 3 / 4);
+  }
+}
+
+/* Typography helpers */
+.title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Rarity colors (used by item names) */
+.r-1  { color: #666; }
+.r-2  { color: #bfbfbf; text-shadow: 0 0 2px rgba(191,191,191,0.4); }
+.r-3  { color: #d4d4d4; text-shadow: 0 0 3px rgba(212,212,212,0.5); }
+.r-4  { color: #e8e8e8; text-shadow: 0 0 4px rgba(232,232,232,0.6); }
+.r-5  { color: #8888ff; text-shadow: 0 0 6px rgba(136,136,255,0.7); }
+.r-6  { color: #ffe066; text-shadow: 0 0 8px rgba(255,224,102,0.7); }
+.r-7  { color: #a060ff; text-shadow: 0 0 10px rgba(160,96,255,0.8); }
+.r-8  { color: #ff8a3c; text-shadow: 0 0 12px rgba(255,138,60,0.85); }
+.r-9  { color: #ff3c7a; text-shadow: 0 0 14px rgba(255,60,122,0.9); }
+.r-10 { color: #3cffd0; text-shadow: 0 0 16px rgba(60,255,208,0.9); }
+.r-11 { color: #9d3cff; text-shadow: 0 0 18px rgba(157,60,255,1.0); }
+.r-12 { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,1.0); }
+.r-13 { color: #ff4422; text-shadow: 0 0 18px rgba(255,68,34,0.9); }
+.r-14 { color: #7ce8ff; text-shadow: 0 0 18px rgba(124,232,255,0.9); }
+.r-15 { color: #fff066; text-shadow: 0 0 18px rgba(255,240,102,0.9); }
+.r-16 { color: #bb88ff; text-shadow: 0 0 22px rgba(187,136,255,1.0); }
+.r-17 { color: #ffffff; text-shadow: 0 0 14px #ff88ff, 0 0 22px #88ffff; }
+.r-18 { color: #00ff95; text-shadow: 0 0 22px rgba(0,255,149,1.0); }
+.r-19 { color: #ff00ff; text-shadow: 0 0 22px #ff00ff, 0 0 14px #ffff00; }
+.r-20 { color: #ffffff; text-shadow: 0 0 24px #ff00ff, 0 0 12px #00ffff; animation: r20-pulse 1.2s ease-in-out infinite alternate; }
+
+@keyframes r20-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.04); }
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
+  color: var(--fg-0);
+  border: 2px solid var(--bg-4);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  position: relative;
+  outline: none;
+}
+
+.btn:hover {
+  background: linear-gradient(180deg, var(--bg-4) 0%, var(--bg-3) 100%);
+  border-color: var(--accent-soft);
+}
+
+.btn:focus,
+.btn.focused {
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 3px var(--focus-ring-glow), inset 0 0 24px rgba(255, 215, 0, 0.15);
+  color: var(--accent);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #5a4a0f 0%, #2a2308 100%);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn.primary:focus,
+.btn.primary.focused {
+  box-shadow: 0 0 0 3px var(--focus-ring-glow), inset 0 0 28px rgba(255, 215, 0, 0.3);
+}
+
+/* Pixi canvas overlay */
+.pixi-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pixi-host canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Utility */
+.row { display: flex; align-items: center; gap: 12px; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.center { display: flex; align-items: center; justify-content: center; }
+.spacer { flex: 1; }
+
+input, button, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* Touch fallback overlay (only visible when no gamepad) */
+.touch-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.touch-dpad {
+  position: absolute;
+  bottom: 32px;
+  left: 32px;
+  width: 140px;
+  height: 140px;
+  pointer-events: auto;
+  display: none;
+}
+
+.touch-dpad.active {
+  display: block;
+}
+
+.touch-buttons {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 8px;
+  display: none;
+}
+
+.touch-buttons.active {
+  display: grid;
+}
+
+.touch-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: var(--fg-0);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-btn:active {
+  background: rgba(255, 215, 0, 0.3);
+  border-color: var(--accent);
+}
