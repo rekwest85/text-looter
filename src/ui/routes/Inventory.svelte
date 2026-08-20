@@ -27,7 +27,7 @@
 
 <div class="inventory">
   <div class="header">
-    <button class="back focusable" on:click={() => navigate("/town")} data-id="back">◀ Back</button>
+    <button class="back focusable" onclick={() => navigate("/town")} data-id="back">◀ Back</button>
     <h1 class="title">Inventory</h1>
     <div class="gold">⛁ {$player.gold}</div>
   </div>
@@ -38,7 +38,7 @@
       <div class="equip-grid">
         {#each EQUIP_SLOTS as slot}
           {@const item = equipped[slot.id]}
-          <div class="slot focusable {item ? `r-${item.rarity}` : ''}" class:filled={!!item} on:focus={(e) => focusSlot(slot.id, e)} on:click={() => item && unequip(slot.id)} data-id="slot-{slot.id}">
+          <div class="slot focusable {item ? `r-${item.rarity}` : ''}" class:filled={!!item} focus={(e) => focusSlot(slot.id, e)} onclick={() => item && unequip(slot.id)} data-id="slot-{slot.id}">
             <div class="slot-label">{slot.short}</div>
             {#if item}
               <div class="slot-item">

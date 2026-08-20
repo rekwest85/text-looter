@@ -31,7 +31,7 @@
       <button
         class="class-card focusable"
         class:selected={selectedClass === cls.id}
-        on:click={() => (selectedClass = cls.id)}
+        onclick={() => (selectedClass = cls.id)}
         data-id="class-{cls.id}"
       >
         <div class="glyph">{cls.glyph}</div>
@@ -46,8 +46,8 @@
       Name:
       <input class="name-input focusable" type="text" bind:value={name} maxlength="20" data-id="name" />
     </label>
-    <button class="btn primary focusable" on:click={start} data-id="start">▶ Begin</button>
-    <button class="btn focusable" on:click={() => navigate("/")} data-id="back">◀ Back</button>
+    <button class="btn primary focusable" onclick={start} data-id="start">▶ Begin</button>
+    <button class="btn focusable" onclick={() => navigate("/")} data-id="back">◀ Back</button>
   </div>
 </div>
 

@@ -52,8 +52,8 @@
   $: rarityClassName = item ? `r-${item.rarity}` : "";
 </script>
 
-<div class="modal-backdrop" on:click={close}>
-  <div class="modal" on:click|stopPropagation>
+<div class="modal-backdrop" onclick={close}>
+  <div class="modal" onclick={(e) => e.stopPropagation()}>
     <div class="header">
       <div class="title-block">
         <div class="rarity {rarityClassName}">
@@ -98,10 +98,10 @@
     </div>
 
     <div class="actions">
-      <button class="btn primary focusable" on:click={equip} data-id="equip">⚔ Equip</button>
-      <button class="btn focusable" on:click={stash} data-id="stash">⊟ Stash</button>
-      <button class="btn focusable" on:click={sell} data-id="sell">⛁ Sell</button>
-      <button class="btn focusable" on:click={close} data-id="close">✕ Close</button>
+      <button class="btn primary focusable" onclick={equip} data-id="equip">⚔ Equip</button>
+      <button class="btn focusable" onclick={stash} data-id="stash">⊟ Stash</button>
+      <button class="btn focusable" onclick={sell} data-id="sell">⛁ Sell</button>
+      <button class="btn focusable" onclick={close} data-id="close">✕ Close</button>
     </div>
   </div>
 </div>

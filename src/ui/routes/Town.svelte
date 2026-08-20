@@ -5,11 +5,18 @@
   import { spawnEnemies } from "../../systems/spawns";
   import { get } from "svelte/store";
 
-  // In Svelte 5 runes mode (default), `let` is NOT reactive. Use $state for
-  // values that should re-render the template. This is why the v0.1.4 debug
-  // bar stayed at "Idle" — the assignment didn't trigger reactivity.
-  let debugStatus = $state("Idle");
-  let debugError: string | null = $state(null);
+  // Plain DOM diagnostic — uses a regular <div> that we update via direct
+  // DOM manipulation. This bypasses ALL Svelte reactivity so we can confirm
+  // the click handler actually ran even if runes/$state is broken.
+  function setDomStatus(msg: string, isError = false) {
+    if (typeof document === "undefined") return;
+    const el = document.getElementById("__town_debug");
+    if (el) {
+      el.textContent = (isError ? "❌ " : "") + msg;
+      el.style.background = isError ? "rgba(80, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.95)";
+      el.style.borderTopColor = isError ? "#ff3c3c" : "#2a2a38";
+    }
+  }
 
   function findStairs(map: any): { x: number; y: number } | null {
     for (let y = 0; y < map.cells.length; y++) {
@@ -20,91 +27,103 @@
     return null;
   }
 
-  function setStatus(msg: string) {
-    debugStatus = msg;
-    // Also expose to window for the DebugOverlay to read.
-    if (typeof window !== "undefined") {
-      (window as any).__lastClick = msg;
-    }
-    console.log("[goDungeon]", msg);
-  }
-
   function goDungeon(event?: Event) {
-    debugError = null;
+    const ts = new Date().toISOString();
     if (typeof window !== "undefined") {
-      (window as any).__lastClick = "Enter Dungeon clicked at " + new Date().toISOString();
+      (window as any).__lastClick = `goDungeon ${ts}`;
     }
-    console.log("[goDungeon] HANDLER FIRED", event?.type);
-    setStatus("Click 1: handler entered");
+    console.log(`[${ts}] [goDungeon] HANDLER FIRED`, event?.type, event?.target);
+    setDomStatus("Click 1: handler entered");
 
     try {
-      setStatus("Step 1: reading location store");
+      setDomStatus("Step 1: reading location store");
       const loc = get(location);
-      console.log("[goDungeon] location =", loc);
       const seed = `${loc.zoneId}-floor1`;
-      setStatus(`Step 2: seed = ${seed}`);
+      setDomStatus(`Step 2: seed = ${seed}`);
 
-      setStatus("Step 3: generating dungeon");
+      setDomStatus("Step 3: generating dungeon");
       const map = generateDungeon(seed, 1);
-      console.log("[goDungeon] map generated, dims:", map.width, "x", map.height);
-      setStatus(`Step 4: map generated (${map.width}x${map.height})`);
+      setDomStatus(`Step 4: map generated ${map.width}x${map.height}`);
 
-      setStatus("Step 5: setting dungeonMap store");
+      setDomStatus("Step 5: setting dungeonMap store");
       dungeonMap.set(map);
-      setStatus("Step 6: dungeonMap set");
+      setDomStatus("Step 6: dungeonMap set");
 
-      setStatus("Step 7: spawning enemies");
+      setDomStatus("Step 7: spawning enemies");
       const es = spawnEnemies(map, 1, seed);
-      console.log("[goDungeon] enemies spawned:", es.length);
-      setStatus(`Step 8: ${es.length} enemies spawned`);
+      setDomStatus(`Step 8: ${es.length} enemies spawned`);
 
-      setStatus("Step 9: setting enemies store");
+      setDomStatus("Step 9: setting enemies store");
       enemies.set(es);
-      setStatus("Step 10: enemies set");
+      setDomStatus("Step 10: enemies set");
 
-      setStatus("Step 11: finding start position");
+      setDomStatus("Step 11: finding start position");
       const start = findStairs(map) ?? { x: 1, y: 1 };
-      console.log("[goDungeon] start position:", start);
-      setStatus(`Step 12: start at (${start.x},${start.y})`);
+      setDomStatus(`Step 12: start at (${start.x},${start.y})`);
 
-      setStatus("Step 13: updating player");
+      setDomStatus("Step 13: updating player");
       player.update((p) => {
         p.position = start;
         return p;
       });
-      setStatus("Step 14: player updated");
+      setDomStatus("Step 14: player updated");
 
-      setStatus("Step 15: updating location");
+      setDomStatus("Step 15: updating location");
       location.update((l) => ({ ...l, isTown: false }));
-      setStatus("Step 16: location updated");
+      setDomStatus("Step 16: location updated");
 
-      setStatus("Step 17: navigating to /dungeon");
+      setDomStatus("Step 17: navigating to /dungeon");
       navigate("/dungeon");
-      setStatus("Step 18: navigate() returned");
+      setDomStatus("Step 18: navigate() returned");
     } catch (e: any) {
       const msg = e?.message || String(e);
       const stack = e?.stack || "";
       console.error("[goDungeon] FAILED:", e);
-      debugError = msg + (stack ? "\n" + stack.split("\n").slice(0, 4).join("\n") : "");
-      setStatus(`ERROR: ${msg}`);
       if (typeof window !== "undefined") {
         (window as any).__lastError = { message: msg, stack };
       }
+      setDomStatus(`ERROR: ${msg}\n${stack.split("\n").slice(0, 3).join("\n")}`, true);
     }
   }
 
   function openInventory(event?: Event) {
-    console.log("[openInventory] HANDLER FIRED", event?.type);
-    setStatus("Inventory: navigating");
+    const ts = new Date().toISOString();
+    if (typeof window !== "undefined") {
+      (window as any).__lastClick = `openInventory ${ts}`;
+    }
+    console.log(`[${ts}] [openInventory] HANDLER FIRED`, event?.type);
+    setDomStatus("Inventory: navigating");
     navigate("/inventory");
   }
 
   function toSettings(event?: Event) {
-    console.log("[toSettings] HANDLER FIRED", event?.type);
-    setStatus("Settings: navigating");
+    const ts = new Date().toISOString();
+    if (typeof window !== "undefined") {
+      (window as any).__lastClick = `toSettings ${ts}`;
+    }
+    console.log(`[${ts}] [toSettings] HANDLER FIRED`, event?.type);
+    setDomStatus("Settings: navigating");
     navigate("/settings");
   }
 </script>
+
+<svelte:head>
+  <script lang="ts">
+    // Belt-and-suspenders: also bind directly to the document via a custom
+    // event so we can see if any click is reaching the document at all.
+    import { onMount } from "svelte";
+    onMount(() => {
+      document.addEventListener("click", (e) => {
+        const t = e.target as HTMLElement | null;
+        const tag = t?.tagName + "#" + t?.id + "." + t?.className;
+        console.log("[doc click]", tag, "defaultPrevented:", e.defaultPrevented);
+        if (typeof window !== "undefined") {
+          (window as any).__lastDocClick = tag;
+        }
+      }, true);
+    });
+  </script>
+</svelte:head>
 
 <div class="town">
   <div class="header">
@@ -123,9 +142,9 @@
     <div class="services">
       <h2 class="title sub">Services</h2>
       <div class="services-grid">
-        <button class="btn focusable" on:click={openInventory} data-id="inv">🎒 Inventory</button>
-        <button class="btn focusable" on:click={goDungeon} data-id="dungeon">⚔ Enter Dungeon</button>
-        <button class="btn focusable" on:click={toSettings} data-id="settings">⚙ Settings</button>
+        <button class="btn focusable" onclick={openInventory} data-id="inv">🎒 Inventory</button>
+        <button class="btn focusable" onclick={goDungeon} data-id="dungeon">⚔ Enter Dungeon</button>
+        <button class="btn focusable" onclick={toSettings} data-id="settings">⚙ Settings</button>
       </div>
     </div>
 
@@ -155,9 +174,10 @@
     </div>
   </div>
 
-  <div class="debug-panel" class:err={!!debugError}>
+  <!-- Plain DOM debug bar — updated via setDomStatus, no Svelte reactivity -->
+  <div id="__town_debug" class="debug-panel">
     <span class="debug-label">DEBUG</span>
-    <span class="debug-msg">{debugError ? `❌ ${debugError}` : debugStatus}</span>
+    <span class="debug-msg">Idle</span>
   </div>
 </div>
 
@@ -300,37 +320,39 @@
     background: linear-gradient(90deg, #aa8800 0%, #ffd700 100%);
   }
 
-  .debug-panel {
+  /* Plain DOM debug panel — not bound via Svelte to avoid any reactivity issues */
+  :global(#__town_debug.debug-panel) {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 40px;
     background: rgba(0, 0, 0, 0.9);
-    border-top: 1px solid var(--bg-3);
+    border-top: 1px solid #2a2a38;
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 0 16px;
-    font-family: var(--font-mono);
+    font-family: monospace, "Courier New", monospace;
     font-size: 11px;
+    color: #c8c8d0;
+    z-index: 10000;
+    transition: background 200ms;
   }
 
-  .debug-panel.err {
-    background: rgba(80, 0, 0, 0.9);
-    border-top-color: #ff3c3c;
-  }
-
-  .debug-label {
-    color: var(--accent);
+  :global(#__town_debug .debug-label) {
+    color: #ffd700;
     font-weight: bold;
     letter-spacing: 0.15em;
+    flex-shrink: 0;
   }
 
-  .debug-msg {
-    color: var(--fg-1);
+  :global(#__town_debug .debug-msg) {
+    color: #c8c8d0;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: pre-wrap;
+    word-break: break-all;
+    flex: 1;
   }
 </style>

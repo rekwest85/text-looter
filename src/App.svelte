@@ -93,7 +93,7 @@
     {:else}
       <div class="error-fallback">
         <h2>Route not found: {$route}</h2>
-        <button on:click={() => (window.location.hash = "/")}>Return Home</button>
+        <button onclick={() => (window.location.hash = "/")}>Return Home</button>
       </div>
     {/if}
   </ErrorBoundary>

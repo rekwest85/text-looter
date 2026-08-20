@@ -34,13 +34,13 @@
   </div>
 
   <div class="menu-list">
-    <button class="btn primary focusable" on:click={createNew} data-id="new">⚔ New Game</button>
+    <button class="btn primary focusable" onclick={createNew} data-id="new">⚔ New Game</button>
     {#each slots.slice(0, 3) as slot}
-      <button class="btn focusable" on:click={() => continueSlot(slot)} data-id="continue-{slot.id}">
+      <button class="btn focusable" onclick={() => continueSlot(slot)} data-id="continue-{slot.id}">
         ▶ Continue — {slot.name} ▸ Lv {slot.level} ▸ Act {slot.actId}
       </button>
     {/each}
-    <button class="btn focusable" on:click={settings} data-id="settings">⚙ Settings</button>
+    <button class="btn focusable" onclick={settings} data-id="settings">⚙ Settings</button>
     {#if gamepadConnectedVal}
       <p class="hint">🎮 Gamepad connected</p>
     {:else}

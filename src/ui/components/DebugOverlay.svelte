@@ -34,7 +34,7 @@
   });
 </script>
 
-<svelte:window on:keydown={onKey} />
+<svelte:window onkeydown={onKey} />
 
 {#if visible}
   <div class="overlay">

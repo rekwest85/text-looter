@@ -38,7 +38,7 @@
       <div class="badge">UNCAUGHT ERROR</div>
       <h2>{error.message || "Something went wrong"}</h2>
       <pre class="stack">{errorInfo}</pre>
-      <button on:click={reset}>↻ Restart</button>
+      <button onclick={reset}>↻ Restart</button>
     </div>
   </div>
 {:else}

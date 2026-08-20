@@ -29,7 +29,7 @@
 
 <div class="settings">
   <div class="header">
-    <button class="back focusable" on:click={back} data-id="back">◀ Back</button>
+    <button class="back focusable" onclick={back} data-id="back">◀ Back</button>
     <h1 class="title">Settings</h1>
   </div>
 
@@ -39,17 +39,17 @@
       <div class="row">
         <label class="field">
           <span>Music</span>
-          <input type="range" min="0" max="1" step="0.05" bind:value={$settings.musicVolume} on:input={update} class="focusable" data-id="music" />
+          <input type="range" min="0" max="1" step="0.05" bind:value={$settings.musicVolume} input={update} class="focusable" data-id="music" />
           <span class="val">{$settings.musicVolume.toFixed(2)}</span>
         </label>
         <label class="field">
           <span>SFX</span>
-          <input type="range" min="0" max="1" step="0.05" bind:value={$settings.sfxVolume} on:input={update} class="focusable" data-id="sfx" />
+          <input type="range" min="0" max="1" step="0.05" bind:value={$settings.sfxVolume} input={update} class="focusable" data-id="sfx" />
           <span class="val">{$settings.sfxVolume.toFixed(2)}</span>
         </label>
         <label class="field">
           <span>Ambience</span>
-          <input type="range" min="0" max="1" step="0.05" bind:value={$settings.ambienceVolume} on:input={update} class="focusable" data-id="amb" />
+          <input type="range" min="0" max="1" step="0.05" bind:value={$settings.ambienceVolume} input={update} class="focusable" data-id="amb" />
           <span class="val">{$settings.ambienceVolume.toFixed(2)}</span>
         </label>
       </div>
@@ -59,15 +59,15 @@
       <h2 class="section-title">Display</h2>
       <div class="row">
         <label class="checkbox">
-          <input type="checkbox" bind:checked={$settings.particlesEnabled} on:change={update} class="focusable" data-id="particles" />
+          <input type="checkbox" bind:checked={$settings.particlesEnabled} change={update} class="focusable" data-id="particles" />
           <span>Particles</span>
         </label>
         <label class="checkbox">
-          <input type="checkbox" bind:checked={$settings.motionBlur} on:change={update} class="focusable" data-id="motionblur" />
+          <input type="checkbox" bind:checked={$settings.motionBlur} change={update} class="focusable" data-id="motionblur" />
           <span>Motion Blur</span>
         </label>
         <label class="checkbox">
-          <input type="checkbox" bind:checked={$settings.reduceMotion} on:change={update} class="focusable" data-id="reducemotion" />
+          <input type="checkbox" bind:checked={$settings.reduceMotion} change={update} class="focusable" data-id="reducemotion" />
           <span>Reduce Motion</span>
         </label>
       </div>
@@ -78,11 +78,11 @@
       <div class="row">
         <label class="field">
           <span>Gamepad Deadzone</span>
-          <input type="range" min="0" max="0.6" step="0.05" bind:value={$settings.gamepadDeadzone} on:input={update} class="focusable" data-id="dz" />
+          <input type="range" min="0" max="0.6" step="0.05" bind:value={$settings.gamepadDeadzone} input={update} class="focusable" data-id="dz" />
           <span class="val">{$settings.gamepadDeadzone.toFixed(2)}</span>
         </label>
         <label class="checkbox">
-          <input type="checkbox" bind:checked={$settings.showTouchOverlay} on:change={update} class="focusable" data-id="touch" />
+          <input type="checkbox" bind:checked={$settings.showTouchOverlay} change={update} class="focusable" data-id="touch" />
           <span>Show Touch Overlay</span>
         </label>
       </div>
@@ -93,7 +93,7 @@
       <div class="row">
         <label class="field">
           <span>Text Size</span>
-          <select bind:value={$settings.textSize} on:change={update} class="focusable" data-id="text">
+          <select bind:value={$settings.textSize} change={update} class="focusable" data-id="text">
             <option value="small">Small</option>
             <option value="medium">Medium</option>
             <option value="large">Large</option>
@@ -101,7 +101,7 @@
         </label>
         <label class="field">
           <span>Colorblind</span>
-          <select bind:value={$settings.colorblindMode} on:change={update} class="focusable" data-id="cb">
+          <select bind:value={$settings.colorblindMode} change={update} class="focusable" data-id="cb">
             <option value="none">None</option>
             <option value="protan">Protan</option>
             <option value="deutan">Deutan</option>

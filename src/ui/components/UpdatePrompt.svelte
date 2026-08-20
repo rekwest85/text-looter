@@ -72,8 +72,8 @@
 </script>
 
 {#if release}
-  <div class="backdrop" on:click={isBusy ? null : onLater}>
-    <div class="modal" on:click|stopPropagation>
+  <div class="backdrop" onclick={isBusy ? null : onLater}>
+    <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="header">
         <div class="badge">UPDATE AVAILABLE</div>
         <h2 class="title">v{release.version}</h2>
@@ -111,13 +111,13 @@
 
       <div class="actions">
         {#if !isBusy}
-          <button class="btn primary focusable" on:click={onUpdate} data-id="update">
+          <button class="btn primary focusable" onclick={onUpdate} data-id="update">
             ⬇ Update Now
           </button>
-          <button class="btn focusable" on:click={onLater} data-id="later">
+          <button class="btn focusable" onclick={onLater} data-id="later">
             Later
           </button>
-          <button class="btn focusable" on:click={onSkip} data-id="skip">
+          <button class="btn focusable" onclick={onSkip} data-id="skip">
             Skip This Version
           </button>
         {:else}
@@ -126,7 +126,7 @@
       </div>
 
       <div class="footer">
-        <button class="link focusable" on:click={onRefresh}>↻ Re-check</button>
+        <button class="link focusable" onclick={onRefresh}>↻ Re-check</button>
         <a class="link" href={release.htmlUrl} target="_blank" rel="noopener">
           View on GitHub ↗
         </a>
