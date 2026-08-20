@@ -12,8 +12,8 @@ $ProjectRoot = Split-Path -Parent $ProjectRoot
 Set-Location $ProjectRoot
 
 $Env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
-$Env:ANDROID_HOME = $Env:ANDROID_HOME ?? "C:\Users\lethb\AppData\Local\Android\Sdk"
-$Env:ANDROID_SDK_ROOT = $Env:ANDROID_SDK_ROOT ?? $Env:ANDROID_HOME
+if (-not $Env:ANDROID_HOME) { $Env:ANDROID_HOME = "C:\Users\lethb\AppData\Local\Android\Sdk" }
+if (-not $Env:ANDROID_SDK_ROOT) { $Env:ANDROID_SDK_ROOT = $Env:ANDROID_HOME }
 $Env:Path = "$Env:JAVA_HOME\bin;$Env:ANDROID_HOME\platform-tools;$Env:Path"
 
 Write-Host "[1/3] Building web app..." -ForegroundColor Cyan
