@@ -2,6 +2,23 @@
 
 Downloadable APKs for sideloading onto Android handhelds. No Play Store, no signing service.
 
+## v0.1.3 — ReferenceError fix
+
+[Download APK](v0.1.3/text-looter-v0.1.3.apk) (3.42 MB)
+
+**Critical fix:**
+- `ReferenceError: focusable is not defined` in `Inventory.svelte` was throwing on every page load. The `class:focusable` Svelte directive (with no value) compiled to `class:focusable={focusable}` in Svelte 5, which references a non-existent variable. Fixed by including `focusable` in the class string instead. This was the actual root cause of the freeze — the Inventory page was crashing before it could render, and the error boundary was catching it as a fatal error that left the screen looking frozen.
+
+This is the build to actually test the freeze fix on. v0.1.2 had a hidden ReferenceError that the error boundary was catching but rendering as a "freeze" because the red error modal looked the same to you as a stuck screen.
+
+**Install:**
+1. Tap the APK link above from the GitHub app → download → install (will auto-update from v0.1.1 or v0.1.2)
+2. Launch "Text Looter RPG"
+3. New Game → choose class → Town → tap **Enter Dungeon** → should load the dungeon
+4. Tap **Inventory** → should load the 20-slot equipment grid
+
+**Tested on:** AYN Thor (16:9), RG 477V (4:3)
+
 ## v0.1.2 — Freeze fixes + custom router
 
 [Download APK](v0.1.2/text-looter-v0.1.2.apk) (3.42 MB)

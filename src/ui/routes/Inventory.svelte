@@ -38,7 +38,7 @@
       <div class="equip-grid">
         {#each EQUIP_SLOTS as slot}
           {@const item = equipped[slot.id]}
-          <div class="slot {item ? `r-${item.rarity}` : ''}" class:filled={!!item} class:focusable on:focus={(e) => focusSlot(slot.id, e)} on:click={() => item && unequip(slot.id)} data-id="slot-{slot.id}">
+          <div class="slot focusable {item ? `r-${item.rarity}` : ''}" class:filled={!!item} on:focus={(e) => focusSlot(slot.id, e)} on:click={() => item && unequip(slot.id)} data-id="slot-{slot.id}">
             <div class="slot-label">{slot.short}</div>
             {#if item}
               <div class="slot-item">
