@@ -1,9 +1,23 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { navigate } from "../../core/router";
   import { player, location, dungeonMap, enemies } from "../../core/state";
   import { generateDungeon } from "../../systems/procgen";
   import { spawnEnemies } from "../../systems/spawns";
   import { get } from "svelte/store";
+
+  // Document-level click logger so we can see if any click reaches the
+  // document at all (bypasses every Svelte event-binding question).
+  onMount(() => {
+    document.addEventListener("click", (e) => {
+      const t = e.target as HTMLElement | null;
+      const tag = (t?.tagName ?? "?") + "#" + (t?.id ?? "") + "." + (t?.className ?? "");
+      console.log("[doc click]", tag, "defaultPrevented:", e.defaultPrevented);
+      if (typeof window !== "undefined") {
+        (window as any).__lastDocClick = tag;
+      }
+    }, true);
+  });
 
   // Plain DOM diagnostic — uses a regular <div> that we update via direct
   // DOM manipulation. This bypasses ALL Svelte reactivity so we can confirm
@@ -106,24 +120,6 @@
     navigate("/settings");
   }
 </script>
-
-<svelte:head>
-  <script lang="ts">
-    // Belt-and-suspenders: also bind directly to the document via a custom
-    // event so we can see if any click is reaching the document at all.
-    import { onMount } from "svelte";
-    onMount(() => {
-      document.addEventListener("click", (e) => {
-        const t = e.target as HTMLElement | null;
-        const tag = t?.tagName + "#" + t?.id + "." + t?.className;
-        console.log("[doc click]", tag, "defaultPrevented:", e.defaultPrevented);
-        if (typeof window !== "undefined") {
-          (window as any).__lastDocClick = tag;
-        }
-      }, true);
-    });
-  </script>
-</svelte:head>
 
 <div class="town">
   <div class="header">
