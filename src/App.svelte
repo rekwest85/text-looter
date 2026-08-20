@@ -9,7 +9,7 @@
   import { checkForUpdate } from "./platform/updater";
   import { loadSettings, listSaveSlots } from "./core/save";
   import { initPixi } from "./vfx/PixiApp";
-  import { route, registerRoute, getComponent, lastNavInfo } from "./core/router";
+  import { route, registerRoute } from "./core/router";
   import ErrorBoundary from "./ui/components/ErrorBoundary.svelte";
   import UpdatePrompt from "./ui/components/UpdatePrompt.svelte";
   import DebugOverlay from "./ui/components/DebugOverlay.svelte";
@@ -29,23 +29,6 @@
   registerRoute("/settings", SettingsRoute);
 
   let pixiHost: HTMLDivElement;
-
-  // Svelte 5 reactive current component. Use $state + $effect explicitly
-  // so the template reliably re-renders when the route changes. Previous
-  // attempts with $derived failed because getComponent() has side effects
-  // (writes to lastNavInfo store) that confused reactivity tracking.
-  let CurrentComponent: any = $state(MainMenu);
-  let lastRenderedRoute = "";
-
-  $effect(() => {
-    const r = $route;
-    const c = getComponent(r);
-    console.log("[App.svelte] effect: route ->", r, "component ->", c?.name ?? "?");
-    if (r !== lastRenderedRoute) {
-      lastRenderedRoute = r;
-      CurrentComponent = c;
-    }
-  });
 
   async function boot() {
     try { await initCapacitor(); } catch (e) { console.warn("capacitor init", e); }
@@ -77,13 +60,11 @@
     try { initTouch(); } catch (e) { console.warn("touch init", e); }
     try { initFocus(); } catch (e) { console.warn("focus init", e); }
 
-    // Non-blocking Pixi init (with timeout safety)
     Promise.race([
       initPixi(pixiHost).catch((e) => console.warn("pixi init", e)),
       new Promise((res) => setTimeout(res, 3000)),
     ]);
 
-    // Non-blocking update check
     checkForUpdate().catch((e) => console.warn("update check", e));
   }
 
@@ -98,8 +79,18 @@
 
 <div class="game-frame">
   <ErrorBoundary>
-    {#if CurrentComponent}
-      <CurrentComponent />
+    {#if $route === "/"}
+      <MainMenu />
+    {:else if $route === "/create"}
+      <CreateChar />
+    {:else if $route === "/town"}
+      <Town />
+    {:else if $route === "/dungeon"}
+      <Dungeon />
+    {:else if $route === "/inventory"}
+      <Inventory />
+    {:else if $route === "/settings"}
+      <SettingsRoute />
     {:else}
       <div class="error-fallback">
         <h2>Route not found: {$route}</h2>
