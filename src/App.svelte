@@ -9,7 +9,7 @@
   import { checkForUpdate } from "./platform/updater";
   import { loadSettings, listSaveSlots } from "./core/save";
   import { initPixi } from "./vfx/PixiApp";
-  import { route, registerRoute, getComponent } from "./core/router";
+  import { route, registerRoute, getComponent, lastNavInfo } from "./core/router";
   import ErrorBoundary from "./ui/components/ErrorBoundary.svelte";
   import UpdatePrompt from "./ui/components/UpdatePrompt.svelte";
   import DebugOverlay from "./ui/components/DebugOverlay.svelte";
@@ -29,15 +29,22 @@
   registerRoute("/settings", SettingsRoute);
 
   let pixiHost: HTMLDivElement;
-  // Svelte 5 runes mode: $: reactive statements don't reliably trigger
-  // template re-renders. Use $derived so the template re-renders when
-  // the route store updates. This is what was preventing the screen from
-  // swapping to the Dungeon component even though the store updated.
-  const CurrentComponent: any = $derived(getComponent($route));
 
-  // Trace route changes for debugging.
+  // Svelte 5 reactive current component. Use $state + $effect explicitly
+  // so the template reliably re-renders when the route changes. Previous
+  // attempts with $derived failed because getComponent() has side effects
+  // (writes to lastNavInfo store) that confused reactivity tracking.
+  let CurrentComponent: any = $state(MainMenu);
+  let lastRenderedRoute = "";
+
   $effect(() => {
-    console.log("[App.svelte] route ->", $route, "component ->", CurrentComponent?.name ?? "?");
+    const r = $route;
+    const c = getComponent(r);
+    console.log("[App.svelte] effect: route ->", r, "component ->", c?.name ?? "?");
+    if (r !== lastRenderedRoute) {
+      lastRenderedRoute = r;
+      CurrentComponent = c;
+    }
   });
 
   async function boot() {

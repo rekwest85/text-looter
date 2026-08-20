@@ -34,9 +34,7 @@ export function registerRoute(path: string, component: any) {
 }
 
 export function getComponent(path: string): any {
-  const c = routeComponents[path] ?? routeComponents["/"] ?? null;
-  setNavInfo(`getComponent(${path}) -> ${c ? "FOUND" : "NULL"}`);
-  return c;
+  return routeComponents[path] ?? routeComponents["/"] ?? null;
 }
 
 export function navigate(path: string) {
