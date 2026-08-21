@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { saveSlots, settings } from "./core/state";
   import { initGamepad } from "./platform/gamepad";
   import { initKeyboard } from "./platform/keyboard";
@@ -9,7 +9,7 @@
   import { checkForUpdate } from "./platform/updater";
   import { loadSettings, listSaveSlots } from "./core/save";
   import { initPixi } from "./vfx/PixiApp";
-  import { route, registerRoute } from "./core/router";
+  import { registerRoute } from "./core/router";
   import ErrorBoundary from "./ui/components/ErrorBoundary.svelte";
   import UpdatePrompt from "./ui/components/UpdatePrompt.svelte";
   import DebugOverlay from "./ui/components/DebugOverlay.svelte";
@@ -29,6 +29,36 @@
   registerRoute("/settings", SettingsRoute);
 
   let pixiHost: HTMLDivElement;
+
+  // Bypass the Svelte store entirely. Read window.location.hash directly into
+  // $state. The hashchange listener calls updatePath() which mutates the
+  // $state, which IS guaranteed to trigger a re-render in Svelte 5 runes mode.
+  // The previous approach using `$route` (auto-subscription) wasn't reliably
+  // re-rendering the template when the route changed.
+  function readPath(): string {
+    if (typeof window === "undefined") return "/";
+    const hash = (window.location.hash || "#/").slice(1);
+    return hash.startsWith("/") ? hash : `/${hash}`;
+  }
+
+  let currentPath: string = $state(readPath());
+
+  function updatePath() {
+    const p = readPath();
+    console.log("[App.svelte] hashchange ->", p);
+    currentPath = p;
+  }
+
+  onMount(() => {
+    updatePath();
+    window.addEventListener("hashchange", updatePath);
+    window.addEventListener("popstate", updatePath);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener("hashchange", updatePath);
+    window.removeEventListener("popstate", updatePath);
+  });
 
   async function boot() {
     try { await initCapacitor(); } catch (e) { console.warn("capacitor init", e); }
@@ -78,22 +108,34 @@
 </svelte:head>
 
 <div class="game-frame">
+  <!-- Big visible indicator -->
+  <div style="position:fixed;top:0;left:0;right:0;background:#ff3c3c;color:#fff;padding:6px 12px;font-family:monospace;font-size:14px;z-index:99999;text-align:center;font-weight:bold;">
+    ROUTE=[{currentPath}] COMPONENT=
+    {#if currentPath === "/"}      MainMenu
+    {:else if currentPath === "/create"}   CreateChar
+    {:else if currentPath === "/town"}     Town
+    {:else if currentPath === "/dungeon"}  Dungeon ← CLICK SHOULD CHANGE THIS
+    {:else if currentPath === "/inventory"} Inventory
+    {:else if currentPath === "/settings"}  SettingsRoute
+    {:else}                       NONE
+    {/if}
+  </div>
   <ErrorBoundary>
-    {#if $route === "/"}
+    {#if currentPath === "/"}
       <MainMenu />
-    {:else if $route === "/create"}
+    {:else if currentPath === "/create"}
       <CreateChar />
-    {:else if $route === "/town"}
+    {:else if currentPath === "/town"}
       <Town />
-    {:else if $route === "/dungeon"}
+    {:else if currentPath === "/dungeon"}
       <Dungeon />
-    {:else if $route === "/inventory"}
+    {:else if currentPath === "/inventory"}
       <Inventory />
-    {:else if $route === "/settings"}
+    {:else if currentPath === "/settings"}
       <SettingsRoute />
     {:else}
       <div class="error-fallback">
-        <h2>Route not found: {$route}</h2>
+        <h2>Route not found: {currentPath}</h2>
         <button onclick={() => (window.location.hash = "/")}>Return Home</button>
       </div>
     {/if}
