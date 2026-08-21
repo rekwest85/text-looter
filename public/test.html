@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JS Test</title>
+  <style>
+    body { font-family: monospace; padding: 40px; background: #050507; color: #ffd700; font-size: 24px; }
+    button { padding: 20px 30px; font-size: 18px; background: #0066cc; color: white; border: none; cursor: pointer; margin: 10px; }
+    #result { margin-top: 30px; padding: 20px; background: #1a1a24; min-height: 60px; border: 2px solid #ffd700; }
+  </style>
+</head>
+<body>
+  <h1>Plain JavaScript Test</h1>
+  <p>If you can read this, the page loaded.</p>
+
+  <div>
+    <button onclick="document.getElementById('result').textContent='BUTTON 1 CLICKED at ' + Date.now()">Test 1: Plain onclick</button>
+    <button id="btn2">Test 2: addEventListener</button>
+  </div>
+
+  <div id="result">No clicks yet</div>
+
+  <script>
+    // Test 2: Vanilla addEventListener
+    document.getElementById('btn2').addEventListener('click', () => {
+      document.getElementById('result').textContent = 'BUTTON 2 CLICKED at ' + Date.now();
+    });
+
+    // Test 3: setTimeout
+    setTimeout(() => {
+      document.getElementById('result').textContent = 'TIMEOUT FIRED at ' + Date.now();
+    }, 1500);
+
+    // Test 4: poll
+    let pollCount = 0;
+    setInterval(() => {
+      pollCount++;
+      if (pollCount % 10 === 0) {
+        console.log('[poll] count=' + pollCount);
+      }
+    }, 100);
+  </script>
+</body>
+</html>
