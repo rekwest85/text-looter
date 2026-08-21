@@ -30,11 +30,6 @@
 
   let pixiHost: HTMLDivElement;
 
-  // Bypass the Svelte store entirely. Read window.location.hash directly into
-  // $state. The hashchange listener calls updatePath() which mutates the
-  // $state, which IS guaranteed to trigger a re-render in Svelte 5 runes mode.
-  // The previous approach using `$route` (auto-subscription) wasn't reliably
-  // re-rendering the template when the route changed.
   function readPath(): string {
     if (typeof window === "undefined") return "/";
     const hash = (window.location.hash || "#/").slice(1);
@@ -43,21 +38,42 @@
 
   let currentPath: string = $state(readPath());
 
-  function updatePath() {
-    const p = readPath();
-    console.log("[App.svelte] hashchange ->", p);
+  function setPath(p: string) {
+    console.log("[App.svelte] setPath:", p, "from:", currentPath);
     currentPath = p;
   }
 
-  onMount(() => {
-    updatePath();
-    window.addEventListener("hashchange", updatePath);
-    window.addEventListener("popstate", updatePath);
-  });
+  let pollTimer: any = null;
 
-  onDestroy(() => {
-    window.removeEventListener("hashchange", updatePath);
-    window.removeEventListener("popstate", updatePath);
+  onMount(() => {
+    // Update once on mount in case hash changed before mount
+    const initial = readPath();
+    console.log("[App.svelte] mount, currentPath:", currentPath, "hash:", initial);
+    if (initial !== currentPath) currentPath = initial;
+
+    // Listen to hashchange
+    const onHashChange = () => {
+      const p = readPath();
+      console.log("[App.svelte] hashchange ->", p);
+      currentPath = p;
+    };
+    window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("popstate", onHashChange);
+
+    // Also poll every 200ms as fallback (in case hashchange doesn't fire)
+    pollTimer = setInterval(() => {
+      const p = readPath();
+      if (p !== currentPath) {
+        console.log("[App.svelte] poll detected path change ->", p);
+        currentPath = p;
+      }
+    }, 200);
+
+    return () => {
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("popstate", onHashChange);
+      if (pollTimer) clearInterval(pollTimer);
+    };
   });
 
   async function boot() {
@@ -114,12 +130,21 @@
     {#if currentPath === "/"}      MainMenu
     {:else if currentPath === "/create"}   CreateChar
     {:else if currentPath === "/town"}     Town
-    {:else if currentPath === "/dungeon"}  Dungeon ← CLICK SHOULD CHANGE THIS
+    {:else if currentPath === "/dungeon"}  Dungeon ← SHOULD RENDER
     {:else if currentPath === "/inventory"} Inventory
     {:else if currentPath === "/settings"}  SettingsRoute
     {:else}                       NONE
     {/if}
   </div>
+
+  <!-- Direct test buttons that bypass everything -->
+  <div style="position:fixed;top:48px;left:0;right:0;background:#0066cc;color:#fff;padding:6px 12px;font-family:monospace;font-size:12px;z-index:99999;text-align:center;display:flex;gap:8px;justify-content:center;">
+    <button onclick={() => setPath("/town")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ TOWN</button>
+    <button onclick={() => setPath("/dungeon")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ DUNGEON (DIRECT)</button>
+    <button onclick={() => setPath("/inventory")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ INVENTORY</button>
+    <span style="font-size:11px;color:#ffcc00;">↑ if THESE buttons don't change the banner, Svelte reactivity is broken in this build</span>
+  </div>
+
   <ErrorBoundary>
     {#if currentPath === "/"}
       <MainMenu />
