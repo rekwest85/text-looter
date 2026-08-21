@@ -1,5 +1,10 @@
+/**
+ * App.svelte — uses vanilla DOM manipulation for routing because Svelte 5
+ * reactivity appears broken in some browser environments. All views are
+ * mounted at startup; we toggle their visibility with plain JS.
+ */
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount } from "svelte";
   import { saveSlots, settings } from "./core/state";
   import { initGamepad } from "./platform/gamepad";
   import { initKeyboard } from "./platform/keyboard";
@@ -30,51 +35,45 @@
 
   let pixiHost: HTMLDivElement;
 
+  // ─── Vanilla-DOM view switcher ──────────────────────────────────────
+  // We don't rely on Svelte's $state / $derived / $effect at all here.
+  // Just a plain JS function that toggles `display` on each view container.
+
   function readPath(): string {
     if (typeof window === "undefined") return "/";
-    const hash = (window.location.hash || "#/").slice(1);
-    return hash.startsWith("/") ? hash : `/${hash}`;
+    const h = (window.location.hash || "#/").slice(1);
+    return h.startsWith("/") ? h : "/" + h;
   }
 
-  let currentPath: string = $state(readPath());
-
-  function setPath(p: string) {
-    console.log("[App.svelte] setPath:", p, "from:", currentPath);
-    currentPath = p;
+  function viewNameFromPath(p: string): string {
+    // "/" -> "root", "/town" -> "town", "/dungeon" -> "dungeon"
+    const stripped = p.replace(/^\//, "");
+    return stripped === "" ? "root" : stripped;
   }
 
-  let pollTimer: any = null;
+  function showView(path: string) {
+    const want = viewNameFromPath(path);
+    console.log("[App.svelte] showView:", want);
+    const els = document.querySelectorAll<HTMLElement>("[data-view]");
+    let shown = 0;
+    els.forEach((el) => {
+      const isMatch = el.getAttribute("data-view") === want;
+      el.style.display = isMatch ? "" : "none";
+      if (isMatch) shown++;
+    });
+    console.log("[App.svelte] shown views:", shown);
+    // Update banner if present
+    const banner = document.getElementById("__app_banner");
+    if (banner) banner.textContent = `PATH=${path} VIEW=${want} SHOWN=${shown}`;
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
+  }
 
-  onMount(() => {
-    // Update once on mount in case hash changed before mount
-    const initial = readPath();
-    console.log("[App.svelte] mount, currentPath:", currentPath, "hash:", initial);
-    if (initial !== currentPath) currentPath = initial;
-
-    // Listen to hashchange
-    const onHashChange = () => {
-      const p = readPath();
-      console.log("[App.svelte] hashchange ->", p);
-      currentPath = p;
-    };
-    window.addEventListener("hashchange", onHashChange);
-    window.addEventListener("popstate", onHashChange);
-
-    // Also poll every 200ms as fallback (in case hashchange doesn't fire)
-    pollTimer = setInterval(() => {
-      const p = readPath();
-      if (p !== currentPath) {
-        console.log("[App.svelte] poll detected path change ->", p);
-        currentPath = p;
-      }
-    }, 200);
-
-    return () => {
-      window.removeEventListener("hashchange", onHashChange);
-      window.removeEventListener("popstate", onHashChange);
-      if (pollTimer) clearInterval(pollTimer);
-    };
-  });
+  // Expose for debug overlay / console use
+  function navigateTo(p: string) {
+    if (typeof window !== "undefined") {
+      window.location.hash = p;
+    }
+  }
 
   async function boot() {
     try { await initCapacitor(); } catch (e) { console.warn("capacitor init", e); }
@@ -115,6 +114,18 @@
   }
 
   onMount(() => {
+    // Set up vanilla JS hash routing
+    const onHash = () => showView(readPath());
+    window.addEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onHash);
+    // Show initial view after the DOM is mounted
+    setTimeout(onHash, 0);
+
+    // Global test helpers
+    (window as any).__showView = showView;
+    (window as any).__navigateTo = navigateTo;
+    (window as any).__readPath = readPath;
+
     boot();
   });
 </script>
@@ -123,47 +134,32 @@
   <meta name="theme-color" content="#050507" />
 </svelte:head>
 
+<!-- Big diagnostic banner -->
+<div
+  id="__app_banner"
+  style="position:fixed;top:0;left:0;right:0;background:#ff3c3c;color:#fff;padding:6px 12px;font-family:monospace;font-size:13px;z-index:99999;text-align:center;font-weight:bold;"
+>
+  PATH=... VIEW=... SHOWN=0
+</div>
+
+<!-- Direct test buttons that use vanilla DOM -->
+<div style="position:fixed;top:36px;left:0;right:0;background:#0066cc;color:#fff;padding:6px 12px;font-family:monospace;font-size:12px;z-index:99999;text-align:center;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+  <button onclick={() => (window as any).__showView("/town")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ TOWN (vanilla)</button>
+  <button onclick={() => (window as any).__showView("/dungeon")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ DUNGEON (vanilla)</button>
+  <button onclick={() => (window as any).__showView("/inventory")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ INVENTORY</button>
+  <button onclick={() => (window as any).__showView("/settings")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ SETTINGS</button>
+  <button onclick={() => (window as any).__showView("/")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ ROOT</button>
+</div>
+
+<!-- All views mounted at once, only one visible at a time. Vanilla DOM toggles. -->
 <div class="game-frame">
-  <!-- Big visible indicator -->
-  <div style="position:fixed;top:0;left:0;right:0;background:#ff3c3c;color:#fff;padding:6px 12px;font-family:monospace;font-size:14px;z-index:99999;text-align:center;font-weight:bold;">
-    ROUTE=[{currentPath}] COMPONENT=
-    {#if currentPath === "/"}      MainMenu
-    {:else if currentPath === "/create"}   CreateChar
-    {:else if currentPath === "/town"}     Town
-    {:else if currentPath === "/dungeon"}  Dungeon ← SHOULD RENDER
-    {:else if currentPath === "/inventory"} Inventory
-    {:else if currentPath === "/settings"}  SettingsRoute
-    {:else}                       NONE
-    {/if}
-  </div>
-
-  <!-- Direct test buttons that bypass everything -->
-  <div style="position:fixed;top:48px;left:0;right:0;background:#0066cc;color:#fff;padding:6px 12px;font-family:monospace;font-size:12px;z-index:99999;text-align:center;display:flex;gap:8px;justify-content:center;">
-    <button onclick={() => setPath("/town")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ TOWN</button>
-    <button onclick={() => setPath("/dungeon")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ DUNGEON (DIRECT)</button>
-    <button onclick={() => setPath("/inventory")} style="padding:4px 10px;background:#333;color:#fff;border:1px solid #fff;cursor:pointer;font-family:monospace;">→ INVENTORY</button>
-    <span style="font-size:11px;color:#ffcc00;">↑ if THESE buttons don't change the banner, Svelte reactivity is broken in this build</span>
-  </div>
-
   <ErrorBoundary>
-    {#if currentPath === "/"}
-      <MainMenu />
-    {:else if currentPath === "/create"}
-      <CreateChar />
-    {:else if currentPath === "/town"}
-      <Town />
-    {:else if currentPath === "/dungeon"}
-      <Dungeon />
-    {:else if currentPath === "/inventory"}
-      <Inventory />
-    {:else if currentPath === "/settings"}
-      <SettingsRoute />
-    {:else}
-      <div class="error-fallback">
-        <h2>Route not found: {currentPath}</h2>
-        <button onclick={() => (window.location.hash = "/")}>Return Home</button>
-      </div>
-    {/if}
+    <div data-view="root" style="display:none;"><MainMenu /></div>
+    <div data-view="create" style="display:none;"><CreateChar /></div>
+    <div data-view="town"><Town /></div>
+    <div data-view="dungeon" style="display:none;"><Dungeon /></div>
+    <div data-view="inventory" style="display:none;"><Inventory /></div>
+    <div data-view="settings" style="display:none;"><SettingsRoute /></div>
   </ErrorBoundary>
   <div bind:this={pixiHost} class="pixi-host"></div>
   <UpdatePrompt />
@@ -173,27 +169,5 @@
 <style>
   :global(body) {
     background: #000;
-  }
-
-  .error-fallback {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    color: #fff;
-    background: #050507;
-  }
-
-  .error-fallback button {
-    background: #ffd700;
-    color: #050507;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
   }
 </style>
